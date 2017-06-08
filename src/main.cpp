@@ -15,6 +15,7 @@
 GLuint programColor;
 GLuint programTexture;
 GLuint programTextureProc;
+GLuint  programSkybox;
 
 GLuint g_Texture;
 GLuint moon_Texture;
@@ -23,6 +24,14 @@ GLuint mercury_Texture;
 GLuint venus_Texture;
 GLuint mars_Texture;
 GLuint jupiter_Texture;
+
+
+GLuint stars_bk_Texture;
+GLuint stars_lf_Texture;
+GLuint stars_fr_Texture;
+GLuint stars_dn_Texture;
+GLuint stars_up_Texture;
+GLuint stars_rt_Texture;
 
 Core::Shader_Loader shaderLoader;
 
@@ -149,8 +158,6 @@ void drawJupiter(float m_f){
 	drawObjectTexture(&sphereModel, modelMatrix , jupiter_Texture);
 }
 
-
-
 void drawEarthAndMoon(float m_f){
 	glm::mat4 modelMatrix = createOrbit(m_f,26);
 	drawObjectTexture(&sphereModel, modelMatrix , g_Texture);
@@ -173,16 +180,9 @@ void drawSun(float m_f){
 }
 
 
-
 void renderScene()
 {
-	glm::mat4 earth;
-	glm::mat4 moon;
-	glm::mat4 rotate;
-	glm::mat4 rotate2;
-    glm::mat4 translate;
-	glm::mat4 translate2;
-	glm::mat4 scale;
+
     float time = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
     float m_f = time;
 
@@ -193,18 +193,93 @@ void renderScene()
 //	glClearColor(0.3f, 0.5f, 0.3f, 1.0f);
 	glClearColor(0.129f, 0.191f, 0.199f, 1.0f);
 
-
 	// Macierz statku "przyczepia" go do kamery. Warto przeanalizowac te linijke i zrozumiec jak to dziala.
-	glm::mat4 shipModelMatrix = glm::translate(cameraPos + cameraDir * 0.25f + glm::vec3(0.5,-0.25f,0)) * glm::rotate(-cameraAngle + glm::radians(90.0f), glm::vec3(0,1,0)) * glm::scale(glm::vec3(0.25f));
-	drawObjectColor(&shipModel,shipModelMatrix , glm::vec3(0.6f));
 
 
-	drawSun(time);
-	drawVenus(time);
-	drawMercury(time);
-	drawEarthAndMoon(time);
-	drawMars(time);
-	drawJupiter(time);
+
+	glPushMatrix();
+
+	    // Reset and transform the matrix.
+	    glLoadIdentity();
+
+	    // Enable/Disable features
+	    glPushAttrib(GL_ENABLE_BIT);
+	    glEnable(GL_TEXTURE_2D);
+	    glDisable(GL_DEPTH_TEST);
+	    glDisable(GL_LIGHTING);
+	    glDisable(GL_BLEND);
+
+	    // Just in case we set all vertices t white.
+	    glColor4f(1,1,1,1);
+
+	    // Render the front quad
+	    glBindTexture(GL_TEXTURE_2D, sun_Texture);
+	    glBegin(GL_QUADS);
+	        glTexCoord2f(0, 0); glVertex3f(  1, -1, -1 );
+	        glTexCoord2f(1, 0); glVertex3f( -1, -1, -1 );
+	        glTexCoord2f(1, 1); glVertex3f( -1,  1, -1 );
+	        glTexCoord2f(0, 1); glVertex3f(  1,  1, -1 );
+	    glEnd();
+
+	    // Render the left quad
+	    glBindTexture(GL_TEXTURE_2D, stars_lf_Texture);
+	    glBegin(GL_QUADS);
+	        glTexCoord2f(0, 0); glVertex3f(  1, -1,  1 );
+	        glTexCoord2f(1, 0); glVertex3f(  1, -1, -1 );
+	        glTexCoord2f(1, 1); glVertex3f(  1,  1, -1 );
+	        glTexCoord2f(0, 1); glVertex3f(  1,  1,  1 );
+	    glEnd();
+
+	    // Render the back quad
+	    glBindTexture(GL_TEXTURE_2D, stars_bk_Texture);
+	    glBegin(GL_QUADS);
+	        glTexCoord2f(0, 0); glVertex3f( -1, -1,  1 );
+	        glTexCoord2f(1, 0); glVertex3f(  1, -1,  1 );
+	        glTexCoord2f(1, 1); glVertex3f(  1,  1,  1 );
+	        glTexCoord2f(0, 1); glVertex3f( -1,  1,  1 );
+
+	    glEnd();
+
+	    // Render the right quad
+	    glBindTexture(GL_TEXTURE_2D, stars_rt_Texture);
+	    glBegin(GL_QUADS);
+	        glTexCoord2f(0, 0); glVertex3f( -1, -1, -1 );
+	        glTexCoord2f(1, 0); glVertex3f( -1, -1,  1 );
+	        glTexCoord2f(1, 1); glVertex3f( -1,  1,  1 );
+	        glTexCoord2f(0, 1); glVertex3f( -1,  1, -1 );
+	    glEnd();
+
+	    // Render the top quad
+	    glBindTexture(GL_TEXTURE_2D, stars_up_Texture);
+	    glBegin(GL_QUADS);
+	        glTexCoord2f(0, 1); glVertex3f( -1,  1, -1 );
+	        glTexCoord2f(0, 0); glVertex3f( -1,  1,  1 );
+	        glTexCoord2f(1, 0); glVertex3f(  1,  1,  1 );
+	        glTexCoord2f(1, 1); glVertex3f(  1,  1, -1 );
+	    glEnd();
+
+	    // Render the bottom quad
+	    glBindTexture(GL_TEXTURE_2D, stars_dn_Texture);
+	    glBegin(GL_QUADS);
+	        glTexCoord2f(0, 0); glVertex3f( -1, -1, -1 );
+	        glTexCoord2f(0, 1); glVertex3f( -1, -1,  1 );
+	        glTexCoord2f(1, 1); glVertex3f(  1, -1,  1 );
+	        glTexCoord2f(1, 0); glVertex3f(  1, -1, -1 );
+	    glEnd();
+
+	    // Restore enable bits and matrix
+	    glPopAttrib();
+	    glPopMatrix();
+
+		drawSun(time);
+		drawVenus(time);
+		drawMercury(time);
+		drawEarthAndMoon(time);
+		drawMars(time);
+		drawJupiter(time);
+		glm::mat4 shipModelMatrix = glm::translate(cameraPos + cameraDir * 0.25f + glm::vec3(0.5,-0.25f,0)) * glm::rotate(-cameraAngle + glm::radians(90.0f), glm::vec3(0,1,0)) * glm::scale(glm::vec3(0.25f));
+		drawObjectColor(&shipModel,shipModelMatrix , glm::vec3(0.6f));
+
 
 	//proceduralTex
 	//drawObjectProceduralTexture(&sphereModel, glm::translate(glm::vec3(0,0,0)), glm::vec3(0.0,0.0,0.0));
@@ -218,6 +293,7 @@ void init()
 	programColor = shaderLoader.CreateProgram("shaders/shader_color.vert", "shaders/shader_color.frag");
 	programTexture = shaderLoader.CreateProgram("shaders/shader_tex.vert", "shaders/shader_tex.frag");
 	programTextureProc = shaderLoader.CreateProgram("shaders/shader_proc_tex.vert", "shaders/shader_proc_tex.frag");
+	programSkybox = shaderLoader.CreateProgram("shaders/shader_skybox.vert", "shaders/shader_skybox.frag");
 
 	g_Texture = Core::LoadTexture("textures/earth.png");
 	moon_Texture = Core::LoadTexture("textures/moonmap.png");
@@ -228,6 +304,13 @@ void init()
 	jupiter_Texture = Core::LoadTexture("textures/jupitermap.png");
 	sphereModel = obj::loadModelFromFile("models/sphere.obj");
 	shipModel = obj::loadModelFromFile("models/spaceship.obj");
+
+	stars_bk_Texture = Core::LoadTexture("textures/stars_bk.png");
+	stars_lf_Texture = Core::LoadTexture("textures/stars_lf.png");
+	stars_fr_Texture = Core::LoadTexture("textures/stars_rf.png");
+	stars_dn_Texture = Core::LoadTexture("textures/stars_dn.png");
+	stars_up_Texture = Core::LoadTexture("textures/stars_up.png");
+	stars_rt_Texture = Core::LoadTexture("textures/stars_rt.png");
 }
 
 void shutdown()
