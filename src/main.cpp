@@ -9,13 +9,16 @@
 #include "Render_Utils.h"
 #include "Camera.h"
 #include "Texture.h"
+  #define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
-
+#define SIZE 1
+GLuint CubemapTexture;
 
 GLuint programColor;
 GLuint programTexture;
 GLuint programTextureProc;
-GLuint  programSkybox;
+GLuint programSkybox;
 
 GLuint g_Texture;
 GLuint moon_Texture;
@@ -45,6 +48,55 @@ glm::vec3 cameraDir;
 glm::mat4 cameraMatrix, perspectiveMatrix;
 glm::vec3 lightDir = glm::normalize(glm::vec3(1.0f, -0.9f, -1.0f));
 
+
+float cubemapVertices[] = {
+	// positions
+	-SIZE,  SIZE, -SIZE,
+	-SIZE, -SIZE, -SIZE,
+	SIZE, -SIZE, -SIZE,
+	SIZE, -SIZE, -SIZE,
+	SIZE,  SIZE, -SIZE,
+	-SIZE,  SIZE, -SIZE,
+
+	-SIZE, -SIZE,  SIZE,
+	-SIZE, -SIZE, -SIZE,
+	-SIZE,  SIZE, -SIZE,
+	-SIZE,  SIZE, -SIZE,
+	-SIZE,  SIZE,  SIZE,
+	-SIZE, -SIZE,  SIZE,
+
+	SIZE, -SIZE, -SIZE,
+	SIZE, -SIZE,  SIZE,
+	SIZE,  SIZE,  SIZE,
+	SIZE,  SIZE,  SIZE,
+	SIZE,  SIZE, -SIZE,
+	SIZE, -SIZE, -SIZE,
+
+	-SIZE, -SIZE,  SIZE,
+	-SIZE,  SIZE,  SIZE,
+	SIZE,  SIZE,  SIZE,
+	SIZE,  SIZE,  SIZE,
+	SIZE, -SIZE,  SIZE,
+	-SIZE, -SIZE,  SIZE,
+
+	-SIZE,  SIZE, -SIZE,
+	SIZE,  SIZE, -SIZE,
+	SIZE,  SIZE,  SIZE,
+	SIZE,  SIZE,  SIZE,
+	-SIZE,  SIZE,  SIZE,
+	-SIZE,  SIZE, -SIZE,
+
+	-SIZE, -SIZE, -SIZE,
+	-SIZE, -SIZE,  SIZE,
+	SIZE, -SIZE, -SIZE,
+	SIZE, -SIZE, -SIZE,
+	-SIZE, -SIZE,  SIZE,
+	SIZE, -SIZE,  SIZE
+};
+
+GLuint SkyboxVertexBuffer, SkyboxVertexAttributes;
+
+
 glm::mat4 createCameraMatrix()
 {
 	// Obliczanie kierunku patrzenia kamery (w plaszczyznie x-z) przy uzyciu zmiennej cameraAngle kontrolowanej przez klawisze.
@@ -52,6 +104,29 @@ glm::mat4 createCameraMatrix()
 	glm::vec3 up = glm::vec3(0,1,0);
 
 	return Core::createViewMatrix(cameraPos, cameraDir, up);
+}
+
+
+//render skybox
+void renderSkybox()
+{
+	glUseProgram(programSkybox);
+	glm::mat4 view = glm::mat4(glm::mat3(cameraMatrix));
+	glUniformMatrix4fv(glGetUniformLocation(programSkybox, "view"), 1, GL_FALSE, (float*)&view);
+	glUniformMatrix4fv(glGetUniformLocation(programSkybox, "perspective"), 1, GL_FALSE, (float*)&perspectiveMatrix);
+
+	glDepthFunc(GL_LEQUAL);
+	glBindVertexArray(SkyboxVertexAttributes);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, CubemapTexture);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+	glDepthFunc(GL_LESS);
+	//glDepthMask(GL_TRUE);
+
+	glUseProgram(0);
+
 }
 
 void drawObjectColor(obj::Model * model, glm::mat4 modelMatrix, glm::vec3 color)
@@ -194,82 +269,8 @@ void renderScene()
 	glClearColor(0.129f, 0.191f, 0.199f, 1.0f);
 
 	// Macierz statku "przyczepia" go do kamery. Warto przeanalizowac te linijke i zrozumiec jak to dziala.
-
-
-
-	glPushMatrix();
-
-	    // Reset and transform the matrix.
-	    glLoadIdentity();
-
-	    // Enable/Disable features
-	    glPushAttrib(GL_ENABLE_BIT);
-	    glEnable(GL_TEXTURE_2D);
-	    glDisable(GL_DEPTH_TEST);
-	    glDisable(GL_LIGHTING);
-	    glDisable(GL_BLEND);
-
-	    // Just in case we set all vertices t white.
-	    glColor4f(1,1,1,1);
-
-	    // Render the front quad
-	    glBindTexture(GL_TEXTURE_2D, sun_Texture);
-	    glBegin(GL_QUADS);
-	        glTexCoord2f(0, 0); glVertex3f(  1, -1, -1 );
-	        glTexCoord2f(1, 0); glVertex3f( -1, -1, -1 );
-	        glTexCoord2f(1, 1); glVertex3f( -1,  1, -1 );
-	        glTexCoord2f(0, 1); glVertex3f(  1,  1, -1 );
-	    glEnd();
-
-	    // Render the left quad
-	    glBindTexture(GL_TEXTURE_2D, stars_lf_Texture);
-	    glBegin(GL_QUADS);
-	        glTexCoord2f(0, 0); glVertex3f(  1, -1,  1 );
-	        glTexCoord2f(1, 0); glVertex3f(  1, -1, -1 );
-	        glTexCoord2f(1, 1); glVertex3f(  1,  1, -1 );
-	        glTexCoord2f(0, 1); glVertex3f(  1,  1,  1 );
-	    glEnd();
-
-	    // Render the back quad
-	    glBindTexture(GL_TEXTURE_2D, stars_bk_Texture);
-	    glBegin(GL_QUADS);
-	        glTexCoord2f(0, 0); glVertex3f( -1, -1,  1 );
-	        glTexCoord2f(1, 0); glVertex3f(  1, -1,  1 );
-	        glTexCoord2f(1, 1); glVertex3f(  1,  1,  1 );
-	        glTexCoord2f(0, 1); glVertex3f( -1,  1,  1 );
-
-	    glEnd();
-
-	    // Render the right quad
-	    glBindTexture(GL_TEXTURE_2D, stars_rt_Texture);
-	    glBegin(GL_QUADS);
-	        glTexCoord2f(0, 0); glVertex3f( -1, -1, -1 );
-	        glTexCoord2f(1, 0); glVertex3f( -1, -1,  1 );
-	        glTexCoord2f(1, 1); glVertex3f( -1,  1,  1 );
-	        glTexCoord2f(0, 1); glVertex3f( -1,  1, -1 );
-	    glEnd();
-
-	    // Render the top quad
-	    glBindTexture(GL_TEXTURE_2D, stars_up_Texture);
-	    glBegin(GL_QUADS);
-	        glTexCoord2f(0, 1); glVertex3f( -1,  1, -1 );
-	        glTexCoord2f(0, 0); glVertex3f( -1,  1,  1 );
-	        glTexCoord2f(1, 0); glVertex3f(  1,  1,  1 );
-	        glTexCoord2f(1, 1); glVertex3f(  1,  1, -1 );
-	    glEnd();
-
-	    // Render the bottom quad
-	    glBindTexture(GL_TEXTURE_2D, stars_dn_Texture);
-	    glBegin(GL_QUADS);
-	        glTexCoord2f(0, 0); glVertex3f( -1, -1, -1 );
-	        glTexCoord2f(0, 1); glVertex3f( -1, -1,  1 );
-	        glTexCoord2f(1, 1); glVertex3f(  1, -1,  1 );
-	        glTexCoord2f(1, 0); glVertex3f(  1, -1, -1 );
-	    glEnd();
-
-	    // Restore enable bits and matrix
-	    glPopAttrib();
-	    glPopMatrix();
+	glm::mat4 shipModelMatrix = glm::translate(cameraPos + cameraDir * 0.25f + glm::vec3(0.5,-0.25f,0)) * glm::rotate(-cameraAngle + glm::radians(90.0f), glm::vec3(0,1,0)) * glm::scale(glm::vec3(0.25f));
+	drawObjectColor(&shipModel,shipModelMatrix , glm::vec3(0.6f));
 
 		drawSun(time);
 		drawVenus(time);
@@ -277,8 +278,7 @@ void renderScene()
 		drawEarthAndMoon(time);
 		drawMars(time);
 		drawJupiter(time);
-		glm::mat4 shipModelMatrix = glm::translate(cameraPos + cameraDir * 0.25f + glm::vec3(0.5,-0.25f,0)) * glm::rotate(-cameraAngle + glm::radians(90.0f), glm::vec3(0,1,0)) * glm::scale(glm::vec3(0.25f));
-		drawObjectColor(&shipModel,shipModelMatrix , glm::vec3(0.6f));
+renderSkybox();
 
 
 	//proceduralTex
@@ -287,13 +287,69 @@ void renderScene()
 }
 
 
+//unsigned int LoadCubemap(std::vector<std::string> faces)
+unsigned int LoadCubemap(std::vector<const GLchar*> faces)
+{
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+
+    int width, height, numComponents;
+    unsigned char* image;
+
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+    for (GLuint i = 0; i < faces.size(); i++)
+    {
+        image = stbi_load(faces[i], &width, &height, &numComponents, 3);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+        stbi_image_free(image);
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
+    return textureID;
+}
+
+
+unsigned int loadCubemap(std::vector<std::string> faces)
+{
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+    int width, height, nrChannels;
+    for (unsigned int i = 0; i < faces.size(); i++)
+    {
+        unsigned char *data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+        if (data)
+        {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+            stbi_image_free(data);
+        }
+        else
+        {
+            std::cout << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
+            stbi_image_free(data);
+        }
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    return textureID;
+}
 void init()
 {
 	glEnable(GL_DEPTH_TEST);
 	programColor = shaderLoader.CreateProgram("shaders/shader_color.vert", "shaders/shader_color.frag");
 	programTexture = shaderLoader.CreateProgram("shaders/shader_tex.vert", "shaders/shader_tex.frag");
 	programTextureProc = shaderLoader.CreateProgram("shaders/shader_proc_tex.vert", "shaders/shader_proc_tex.frag");
-	programSkybox = shaderLoader.CreateProgram("shaders/shader_skybox.vert", "shaders/shader_skybox.frag");
+	programSkybox = shaderLoader.CreateProgram("shaders/skybox.vert", "shaders/skybox.frag");
 
 	g_Texture = Core::LoadTexture("textures/earth.png");
 	moon_Texture = Core::LoadTexture("textures/moonmap.png");
@@ -311,6 +367,30 @@ void init()
 	stars_dn_Texture = Core::LoadTexture("textures/stars_dn.png");
 	stars_up_Texture = Core::LoadTexture("textures/stars_up.png");
 	stars_rt_Texture = Core::LoadTexture("textures/stars_rt.png");
+
+
+	//load Cubemap texture
+	std::vector<std::string> faces ;
+	faces.push_back("textures/skybox/stars_fr.jpg");
+	faces.push_back("textures/skybox/stars_lf.jpg");
+	faces.push_back("textures/skybox/stars_rt.jpg");
+	faces.push_back("textures/skybox/stars_up.jpg");
+	faces.push_back("textures/skybox/stars_dn.jpg");
+	faces.push_back("textures/skybox/stars_bk.jpg");
+
+	CubemapTexture = loadCubemap(faces);
+
+	//Skybox settings
+	glGenBuffers(1, &SkyboxVertexBuffer);
+	glGenVertexArrays(1, &SkyboxVertexAttributes);
+	glBindVertexArray(SkyboxVertexAttributes);
+	glBindBuffer(GL_ARRAY_BUFFER, SkyboxVertexBuffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cubemapVertices), cubemapVertices, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
 }
 
 void shutdown()
