@@ -1,3 +1,4 @@
+#pragma GCC diagnostic ignored "-Wwrite-strings"
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 #include <glm/glm.hpp>
@@ -9,7 +10,7 @@
 #include "Render_Utils.h"
 #include "Camera.h"
 #include "Texture.h"
-  #define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
 #define SIZE 1
@@ -19,7 +20,7 @@ GLuint programColor;
 GLuint programTexture;
 GLuint programTextureProc;
 GLuint programSkybox;
-
+//asdsaasdsasdsdsdssdsddssdsddss
 GLuint g_Texture;
 GLuint moon_Texture;
 GLuint sun_Texture;
@@ -27,14 +28,6 @@ GLuint mercury_Texture;
 GLuint venus_Texture;
 GLuint mars_Texture;
 GLuint jupiter_Texture;
-
-
-GLuint stars_bk_Texture;
-GLuint stars_lf_Texture;
-GLuint stars_fr_Texture;
-GLuint stars_dn_Texture;
-GLuint stars_up_Texture;
-GLuint stars_rt_Texture;
 
 Core::Shader_Loader shaderLoader;
 
@@ -106,8 +99,6 @@ glm::mat4 createCameraMatrix()
 	return Core::createViewMatrix(cameraPos, cameraDir, up);
 }
 
-
-//render skybox
 void renderSkybox()
 {
 	glUseProgram(programSkybox);
@@ -123,10 +114,7 @@ void renderSkybox()
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 	glDepthFunc(GL_LESS);
-	//glDepthMask(GL_TRUE);
-
 	glUseProgram(0);
-
 }
 
 void drawObjectColor(obj::Model * model, glm::mat4 modelMatrix, glm::vec3 color)
@@ -185,7 +173,7 @@ void drawObjectProceduralTexture(obj::Model * model, glm::mat4 modelMatrix, glm:
 void keyboard(unsigned char key, int x, int y)
 {
 	float angleSpeed = 0.1f;
-	float moveSpeed = 0.4f;
+	float moveSpeed = 0.5f;
 	switch(key)
 	{
 		case 'z': cameraAngle -= angleSpeed; break;
@@ -200,7 +188,6 @@ void keyboard(unsigned char key, int x, int y)
 	}
 
 }
-
 
 glm::mat4 createOrbit(float m_f,float sunDistance){
 	glm::mat4 translate;
@@ -242,7 +229,6 @@ void drawEarthAndMoon(float m_f){
 }
 
 void drawMars(float m_f){
-
 	glm::mat4 modelMatrix = createOrbit(m_f * 0.532,30);
 	drawObjectTexture(&sphereModel, modelMatrix , mars_Texture);
 
@@ -254,10 +240,8 @@ void drawSun(float m_f){
 	drawObjectTexture(&sphereModel, glm::scale(glm::vec3(3.25f)) *  createOrbit(m_f,0), sun_Texture);
 }
 
-
 void renderScene()
 {
-
     float time = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
     float m_f = time;
 
@@ -265,54 +249,22 @@ void renderScene()
 	perspectiveMatrix = Core::createPerspectiveMatrix();
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-//	glClearColor(0.3f, 0.5f, 0.3f, 1.0f);
 	glClearColor(0.129f, 0.191f, 0.199f, 1.0f);
 
 	// Macierz statku "przyczepia" go do kamery. Warto przeanalizowac te linijke i zrozumiec jak to dziala.
 	glm::mat4 shipModelMatrix = glm::translate(cameraPos + cameraDir * 0.25f + glm::vec3(0.5,-0.25f,0)) * glm::rotate(-cameraAngle + glm::radians(90.0f), glm::vec3(0,1,0)) * glm::scale(glm::vec3(0.25f));
 	drawObjectColor(&shipModel,shipModelMatrix , glm::vec3(0.6f));
 
-		drawSun(time);
-		drawVenus(time);
-		drawMercury(time);
-		drawEarthAndMoon(time);
-		drawMars(time);
-		drawJupiter(time);
-renderSkybox();
+	drawSun(time);
+	drawVenus(time);
+	drawMercury(time);
+	drawEarthAndMoon(time);
+	drawMars(time);
+	drawJupiter(time);
+	renderSkybox();
 
-
-	//proceduralTex
-	//drawObjectProceduralTexture(&sphereModel, glm::translate(glm::vec3(0,0,0)), glm::vec3(0.0,0.0,0.0));
 	glutSwapBuffers();
 }
-
-
-//unsigned int LoadCubemap(std::vector<std::string> faces)
-unsigned int LoadCubemap(std::vector<const GLchar*> faces)
-{
-    GLuint textureID;
-    glGenTextures(1, &textureID);
-
-    int width, height, numComponents;
-    unsigned char* image;
-
-    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
-    for (GLuint i = 0; i < faces.size(); i++)
-    {
-        image = stbi_load(faces[i], &width, &height, &numComponents, 3);
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
-        stbi_image_free(image);
-    }
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-
-    return textureID;
-}
-
 
 unsigned int loadCubemap(std::vector<std::string> faces)
 {
@@ -343,6 +295,9 @@ unsigned int loadCubemap(std::vector<std::string> faces)
 
     return textureID;
 }
+
+
+
 void init()
 {
 	glEnable(GL_DEPTH_TEST);
@@ -361,22 +316,15 @@ void init()
 	sphereModel = obj::loadModelFromFile("models/sphere.obj");
 	shipModel = obj::loadModelFromFile("models/spaceship.obj");
 
-	stars_bk_Texture = Core::LoadTexture("textures/stars_bk.png");
-	stars_lf_Texture = Core::LoadTexture("textures/stars_lf.png");
-	stars_fr_Texture = Core::LoadTexture("textures/stars_rf.png");
-	stars_dn_Texture = Core::LoadTexture("textures/stars_dn.png");
-	stars_up_Texture = Core::LoadTexture("textures/stars_up.png");
-	stars_rt_Texture = Core::LoadTexture("textures/stars_rt.png");
-
-
 	//load Cubemap texture
-	std::vector<std::string> faces ;
+	std::vector<std::string> faces;
 	faces.push_back("textures/skybox/stars_fr.jpg");
 	faces.push_back("textures/skybox/stars_lf.jpg");
-	faces.push_back("textures/skybox/stars_rt.jpg");
-	faces.push_back("textures/skybox/stars_up.jpg");
+	faces.push_back("textures/skybox/stars_rf.jpg");
 	faces.push_back("textures/skybox/stars_dn.jpg");
-	faces.push_back("textures/skybox/stars_bk.jpg");
+	faces.push_back("textures/skybox/stars_up.jpg");
+	faces.push_back("textures/skybox/stars_rt.jpg");
+
 
 	CubemapTexture = loadCubemap(faces);
 
@@ -397,6 +345,7 @@ void shutdown()
 {
 	shaderLoader.DeleteProgram(programColor);
 	shaderLoader.DeleteProgram(programTexture);
+	shaderLoader.DeleteProgram(programSkybox);
 }
 
 void idle()
@@ -409,7 +358,7 @@ int main(int argc, char ** argv)
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
 	glutInitWindowPosition(200, 200);
-	glutInitWindowSize(600, 600);
+	glutInitWindowSize(800, 800);
 	glutCreateWindow("Symulacja lotu kosmicznego");
 	glewInit();
 
@@ -417,9 +366,7 @@ int main(int argc, char ** argv)
 	glutKeyboardFunc(keyboard);
 	glutDisplayFunc(renderScene);
 	glutIdleFunc(idle);
-
 	glutMainLoop();
-
 	shutdown();
 
 	return 0;
